@@ -1,0 +1,31 @@
+.muted {
+  color: var(--muted);
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.over {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.status-chip {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chip-over {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.chip-ok {
+  background: #e0f2fe;
+  color: #0369a1;
+}

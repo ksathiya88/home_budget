@@ -1,0 +1,49 @@
+.muted {
+  color: var(--muted);
+}
+
+.budget-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: end;
+}
+
+.budget-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.budget-form select,
+.budget-form input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.budget-form button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.budget-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.success {
+  color: #15803d;
+}

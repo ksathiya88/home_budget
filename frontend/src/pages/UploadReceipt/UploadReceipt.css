@@ -1,0 +1,47 @@
+.upload-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-picker input {
+  display: none;
+}
+
+.file-picker span {
+  display: inline-block;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  background: #f8fafc;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+.actions-row button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.over {
+  color: #b91c1c;
+  font-weight: 600;
+}

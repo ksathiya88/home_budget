@@ -1,0 +1,1 @@
+Category management per household. 
