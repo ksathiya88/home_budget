@@ -1,14 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./UploadReceipt.css";
-import {
-  getCategoryRules,
-  CategoryRule,
-  addExpense,
-  addToReviewQueue
-} from "../../services/firestore";
+import { getCategoryRules, CategoryRule } from "../../services/firestore";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
+import { processExpense } from "../../services/expenseService";
 import { applyCategoryRules } from "../../services/rules";
-import { aiCategorise } from "../../services/ai";
+import { aiCategorise, AiResult } from "../../services/aiService";
 
 type ParsedItem = { item: string; amount: number };
 
@@ -22,6 +18,8 @@ const UploadReceipt: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [createdByName, setCreatedByName] = useState("");
+  const [aiResults, setAiResults] = useState<Record<string, AiResult>>({});
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const loadRules = async () => {
@@ -34,6 +32,37 @@ const UploadReceipt: React.FC = () => {
     };
     void loadRules();
   }, [householdId]);
+
+  // Clear cached AI results when rules change (they affect matching)
+  useEffect(() => {
+    setAiResults({});
+    setAiLoading({});
+  }, [rules]);
+
+  // Fetch AI categorisations for items that don't hit rules
+  useEffect(() => {
+    parsedItems.forEach((p) => {
+      const ruleCategory = applyCategoryRules(p.item, rules);
+      if (ruleCategory) return;
+      if (aiResults[p.item] || aiLoading[p.item]) return;
+
+      setAiLoading((prev) => ({ ...prev, [p.item]: true }));
+      void aiCategorise(p.item, rules)
+        .then((res) => {
+          setAiResults((prev) => ({ ...prev, [p.item]: res }));
+        })
+        .catch((err) => {
+          console.warn("[UploadReceipt] aiCategorise error", err);
+        })
+        .finally(() => {
+          setAiLoading((prev) => {
+            const next = { ...prev };
+            delete next[p.item];
+            return next;
+          });
+        });
+    });
+  }, [parsedItems, rules, aiResults, aiLoading]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,39 +121,24 @@ const UploadReceipt: React.FC = () => {
     let queued = 0;
     try {
       for (const item of parsedItems) {
-        const ruleCategory = applyCategoryRules(item.item, rules);
-        const aiResult = !ruleCategory ? aiCategorise(item.item) : null;
-        const resolvedCategory = ruleCategory || aiResult?.category || "Uncategorized";
-
-        if (aiResult && aiResult.confidence < 0.7 && !ruleCategory) {
-          await addToReviewQueue({
+        const result = await processExpense(
+          {
             item: item.item,
-            suggestedCategory: aiResult.category,
-            confidence: aiResult.confidence,
-            householdId,
             amount: item.amount || 0,
             createdBy: "currentUser", // replace with auth user id
             createdByName: createdByName.trim(),
+            householdId,
             weekId: currentWeekId(),
             monthId: currentMonthId(),
             createdAt: Date.now()
-          });
+          },
+          rules
+        );
+        if (result.status === "queued") {
           queued += 1;
-          continue;
+        } else {
+          saved += 1;
         }
-
-        await addExpense({
-          item: item.item,
-          category: resolvedCategory,
-          amount: item.amount || 0,
-          createdBy: "currentUser", // replace with auth user id
-          createdByName: createdByName.trim(),
-          householdId,
-          weekId: currentWeekId(),
-          monthId: currentMonthId(),
-          createdAt: Date.now()
-        });
-        saved += 1;
       }
       setStatus(`Saved ${saved} item(s). Sent ${queued} to review.`);
     } catch (err) {
@@ -138,17 +152,19 @@ const UploadReceipt: React.FC = () => {
     () =>
       parsedItems.map((p, idx) => {
         const ruleCategory = applyCategoryRules(p.item, rules);
-        const aiResult = !ruleCategory ? aiCategorise(p.item) : null;
-        const resolvedCategory = ruleCategory || aiResult?.category || "Uncategorized";
-        const confidence = ruleCategory ? 1 : aiResult?.confidence ?? 0.5;
+        const aiResult = !ruleCategory ? aiResults[p.item] : null;
+        const loading = !ruleCategory && aiLoading[p.item];
+        const resolvedCategory = ruleCategory || aiResult?.category || (loading ? "…" : "Uncategorized");
+        const confidence = ruleCategory ? 1 : aiResult?.confidence ?? (loading ? 0.5 : 0.5);
         return {
           ...p,
           resolvedCategory,
           confidence,
-          lowConfidence: !ruleCategory && confidence < 0.7
+          lowConfidence: !ruleCategory && (aiResult ? confidence < 0.7 : true),
+          loading
         };
       }),
-    [parsedItems, rules]
+    [parsedItems, rules, aiResults, aiLoading]
   );
 
   return (

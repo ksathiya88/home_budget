@@ -9,6 +9,8 @@ import {
   CategoryRule
 } from "../../services/firestore";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
+import Loader from "../../components/Loader";
+import EmptyState from "../../components/EmptyState";
 
 const Categories: React.FC = () => {
   const householdId = useHouseholdId();
@@ -121,15 +123,23 @@ const Categories: React.FC = () => {
       </div>
 
       <div className="panel">
-        <ul className="category-list">
-          {categories.map((cat) => (
-            <li key={cat.name} className={cat.active ? "" : "inactive"}>
-              {cat.name}
-              <span className="status">{cat.active ? "Active" : "Inactive"}</span>
-            </li>
-          ))}
-          {!categories.length && <li className="muted">No categories yet.</li>}
-        </ul>
+        {loading ? (
+          <Loader />
+        ) : (
+          <ul className="category-list">
+            {categories.map((cat) => (
+              <li key={cat.name} className={cat.active ? "" : "inactive"}>
+                {cat.name}
+                <span className="status">{cat.active ? "Active" : "Inactive"}</span>
+              </li>
+            ))}
+            {!categories.length && (
+              <li>
+                <EmptyState title="No categories" message="Add your first category to get started." />
+              </li>
+            )}
+          </ul>
+        )}
       </div>
 
       <div className="panel">
@@ -158,14 +168,22 @@ const Categories: React.FC = () => {
             {loading ? "Saving..." : "Add Rule"}
           </button>
         </form>
-        <ul className="rule-list">
-          {rules.map((rule) => (
-            <li key={rule.id || rule.keyword}>
-              <strong>{rule.keyword}</strong> → {rule.category}
-            </li>
-          ))}
-          {!rules.length && <li className="muted">No rules yet.</li>}
-        </ul>
+        {loading ? (
+          <Loader />
+        ) : (
+          <ul className="rule-list">
+            {rules.map((rule) => (
+              <li key={rule.id || rule.keyword}>
+                <strong>{rule.keyword}</strong> → {rule.category}
+              </li>
+            ))}
+            {!rules.length && (
+              <li>
+                <EmptyState title="No rules yet" message="Rules appear after you add them or approve reviews." />
+              </li>
+            )}
+          </ul>
+        )}
       </div>
     </div>
   );

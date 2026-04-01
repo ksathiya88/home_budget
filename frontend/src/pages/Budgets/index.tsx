@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./Budgets.css";
 import { addOrUpdateBudget, getBudgets, getCategories, Budget, Category } from "../../services/firestore";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
+import Loader from "../../components/Loader";
+import EmptyState from "../../components/EmptyState";
 
 type BudgetWithName = Budget & { categoryName?: string };
 
@@ -139,31 +141,35 @@ const Budgets: React.FC = () => {
       </div>
 
       <div className="panel">
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Limit</th>
-              <th>Period</th>
-            </tr>
-          </thead>
-          <tbody>
-            {budgets.map((budget) => (
-              <tr key={`${budget.categoryId}-${budget.period}`}>
-                <td>{budget.categoryName || budget.categoryId}</td>
-                <td>${budget.limit.toFixed(2)}</td>
-                <td>{budget.period}</td>
-              </tr>
-            ))}
-            {!budgets.length && (
+        {loading ? (
+          <Loader />
+        ) : (
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={3} className="muted">
-                  No budgets yet.
-                </td>
+                <th>Category</th>
+                <th>Limit</th>
+                <th>Period</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {budgets.map((budget) => (
+                <tr key={`${budget.categoryId}-${budget.period}`}>
+                  <td>{budget.categoryName || budget.categoryId}</td>
+                  <td>${budget.limit.toFixed(2)}</td>
+                  <td>{budget.period}</td>
+                </tr>
+              ))}
+              {!budgets.length && (
+                <tr>
+                  <td colSpan={3}>
+                    <EmptyState title="No budgets yet" message="Add a budget to track spend against limits." />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

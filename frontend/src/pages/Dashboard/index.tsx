@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./Dashboard.css";
 import { getBudgetSummary, BudgetSummaryItem } from "../../services/summary";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
+import Loader from "../../components/Loader";
+import EmptyState from "../../components/EmptyState";
 
 const Dashboard: React.FC = () => {
   const householdId = useHouseholdId();
@@ -48,21 +50,28 @@ const Dashboard: React.FC = () => {
 
       {error && <div className="panel error">Error: {error}</div>}
 
-      <div className="page-grid two">
-        <div className="panel stat-card">
+      <div className="card-grid three">
+        <div className="card">
           <strong>This Week</strong>
-          <span className="stat-number">${weeklyTotal.toFixed(2)}</span>
-          <small className="muted">Sum of expenses for current weekId.</small>
+          {loading ? <Loader /> : <div className="stat-number">${weeklyTotal.toFixed(2)}</div>}
+          <div className="subtle">Sum of expenses for current weekId.</div>
         </div>
-        <div className="panel stat-card">
+        <div className="card">
           <strong>This Month</strong>
-          <span className="stat-number">${monthlyTotal.toFixed(2)}</span>
-          <small className="muted">Sum of expenses for current monthId.</small>
+          {loading ? <Loader /> : <div className="stat-number">${monthlyTotal.toFixed(2)}</div>}
+          <div className="subtle">Sum of expenses for current monthId.</div>
+        </div>
+        <div className="card">
+          <strong>Categories Tracked</strong>
+          {loading ? <Loader /> : <div className="stat-number">{weekly.length || monthly.length || 0}</div>}
+          <div className="subtle">Unique categories with spend this period.</div>
         </div>
       </div>
 
       {loading ? (
-        <div className="panel">Loading…</div>
+        <div className="panel">
+          <Loader />
+        </div>
       ) : (
         <div className="page-grid two">
           <div className="panel">
@@ -107,8 +116,8 @@ const SummaryTable: React.FC<SummaryProps> = ({ items }) => (
       })}
       {!items.length && (
         <tr>
-          <td colSpan={4} className="muted">
-            No data yet.
+          <td colSpan={4}>
+            <EmptyState title="No data yet." message="Spend will appear once expenses are recorded." />
           </td>
         </tr>
       )}

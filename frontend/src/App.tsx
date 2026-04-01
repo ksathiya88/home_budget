@@ -12,7 +12,7 @@ import "./App.css";
 const App: React.FC = () => (
   <div className="app-shell">
     <Sidebar />
-    <main>
+    <main className="main-container">
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />

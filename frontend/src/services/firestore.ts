@@ -22,6 +22,9 @@ export type Expense = {
   weekId: string;
   monthId: string;
   createdAt?: number; // epoch millis for sorting
+  confidence?: number;
+  source?: "rule" | "ai" | "manual";
+  needsReview?: boolean;
 };
 
 export type Category = {
@@ -102,8 +105,10 @@ export const getCategoryRules = async (householdId: string) => {
 };
 
 export const addCategoryRule = async (rule: CategoryRule) => {
+  const normalized = rule.keyword.trim().toLowerCase();
   const rulesRef = collection(db, "categoryRules");
-  await addDoc(rulesRef, rule);
+  const ruleId = `${rule.householdId}-${normalized}`;
+  await setDoc(doc(rulesRef, ruleId), { ...rule, keyword: normalized }, { merge: true });
 };
 
 // Review Queue

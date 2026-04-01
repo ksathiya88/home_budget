@@ -3,18 +3,17 @@ import "./Expenses.css";
 import {
   getExpenses,
   Expense,
-  addExpense,
   getCategories,
   Category,
   getCategoryRules,
   CategoryRule,
   updateExpense,
-  deleteExpense,
-  addToReviewQueue
+  deleteExpense
 } from "../../services/firestore";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
-import { applyCategoryRules } from "../../services/rules";
-import { aiCategorise } from "../../services/ai";
+import Loader from "../../components/Loader";
+import EmptyState from "../../components/EmptyState";
+import { processExpense } from "../../services/expenseService";
 
 const Expenses: React.FC = () => {
   const householdId = useHouseholdId();
@@ -97,43 +96,29 @@ const Expenses: React.FC = () => {
       setError("Item, amount, and created by are required. Amount must be positive.");
       return;
     }
-    const ruleCategory = applyCategoryRules(form.item, rules);
-    const aiResult = !ruleCategory ? aiCategorise(form.item) : null;
-    const resolvedCategory = ruleCategory || form.category || aiResult?.category;
     setSaving(true);
     try {
-      if (aiResult && aiResult.confidence < 0.7) {
-        await addToReviewQueue({
+      const result = await processExpense(
+        {
           item: form.item.trim(),
-          suggestedCategory: aiResult.category,
-          confidence: aiResult.confidence,
-          householdId,
           amount: amountNum,
-          createdBy: "currentUser", // replace with auth user id when available
+          category: form.category || undefined,
+          createdBy: "currentUser",
           createdByName: form.createdByName.trim(),
+          householdId,
           weekId: currentWeekId(),
           monthId: currentMonthId(),
           createdAt: Date.now()
-        });
+        },
+        rules
+      );
+
+      if (result.status === "queued") {
         setSuccess("Low confidence. Sent to review queue.");
       } else {
-        await addExpense({
-          item: form.item.trim(),
-          category: resolvedCategory || "Uncategorized",
-          amount: amountNum,
-          createdBy: "currentUser", // replace with auth user id when available
-          createdByName: form.createdByName.trim(),
-          householdId,
-          weekId: currentWeekId(),
-          monthId: currentMonthId(),
-          createdAt: Date.now()
-        });
-        const categoryMsg = ruleCategory
-          ? ` (rule: ${ruleCategory})`
-          : aiResult
-          ? ` (AI: ${aiResult.category}, ${aiResult.confidence.toFixed(2)})`
-          : "";
-        setSuccess(`Expense added${categoryMsg}.`);
+        setSuccess(
+          `Expense added (${result.source === "rule" ? "rule" : "AI"} • ${(result.confidence * 100).toFixed(0)}%)`
+        );
         const updated = await getExpenses(householdId);
         setExpenses(updated);
       }
@@ -257,7 +242,7 @@ const Expenses: React.FC = () => {
 
       <div className="panel">
         {loading ? (
-          <div>Loading…</div>
+          <Loader />
         ) : (
           <table className="table">
             <thead>
@@ -266,6 +251,7 @@ const Expenses: React.FC = () => {
                 <th>Category</th>
                 <th>Amount</th>
                 <th>Created By</th>
+                <th>Source</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -307,6 +293,10 @@ const Expenses: React.FC = () => {
                     )}
                   </td>
                   <td>{row.createdByName || row.createdBy}</td>
+                  <td>
+                    {row.needsReview ? "⚠" : row.source === "rule" ? "⚡" : row.source === "ai" ? "🤖" : ""}
+                    {row.confidence ? ` ${(row.confidence * 100).toFixed(0)}%` : ""}
+                  </td>
                   <td className="actions">
                     {editingId === row.id ? (
                       <>
@@ -332,8 +322,8 @@ const Expenses: React.FC = () => {
               ))}
               {!sorted.length && (
                 <tr>
-                  <td colSpan={5} className="muted">
-                    No expenses yet.
+                  <td colSpan={5}>
+                    <EmptyState title="No expenses yet" message="Add an expense or process a receipt to begin." />
                   </td>
                 </tr>
               )}

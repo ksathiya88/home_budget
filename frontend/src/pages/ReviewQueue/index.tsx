@@ -10,6 +10,8 @@ import {
   ReviewQueueItem
 } from "../../services/firestore";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
+import Loader from "../../components/Loader";
+import EmptyState from "../../components/EmptyState";
 
 type QueueEntry = ReviewQueueItem & { id?: string };
 
@@ -114,7 +116,7 @@ const ReviewQueue: React.FC = () => {
 
       <div className="panel">
         {loading ? (
-          <div>Loading…</div>
+          <Loader />
         ) : (
           <table className="table">
             <thead>
@@ -170,8 +172,8 @@ const ReviewQueue: React.FC = () => {
               ))}
               {!items.length && (
                 <tr>
-                  <td colSpan={6} className="muted">
-                    Nothing to review.
+                  <td colSpan={6}>
+                    <EmptyState title="Nothing to review" message="Low-confidence items will show up here." />
                   </td>
                 </tr>
               )}
