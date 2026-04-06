@@ -6,6 +6,7 @@ const links = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/expenses", label: "Expense List" },
   { to: "/upload-receipt", label: "Upload Receipt" },
+  { to: "/ocr-pipeline", label: "OCR Pipeline" },
   { to: "/review-queue", label: "Review Queue" },
   { to: "/categories", label: "Categories" },
   { to: "/budgets", label: "Budgets" }

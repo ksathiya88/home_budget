@@ -1,0 +1,19 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preview-img {
+  max-width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.text-block {
+  background: #f7f7f9;
+  border: 1px solid #e3e3e8;
+  border-radius: 8px;
+  padding: 12px;
+  white-space: pre-wrap;
+}
