@@ -5,11 +5,11 @@ const router = Router();
 
 router.post("/pipeline", async (req, res) => {
   try {
-    const { imageBase64 } = req.body || {};
+    const { imageBase64, householdId } = req.body || {};
     if (!imageBase64) {
       return res.status(400).json({ error: "imageBase64 is required" });
     }
-    const result = await runPipeline(imageBase64);
+    const result = await runPipeline(imageBase64, householdId || "");
     res.json(result);
   } catch (err) {
     console.error("[pipelineRoute] error", err);

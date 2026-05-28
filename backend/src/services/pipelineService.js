@@ -1,20 +1,15 @@
 const { extractData } = require("../handlers/extractData");
 
-const OCR_URL =
-  process.env.OCR_URL ||
-  "https://by42fu2friqj6js7gx6fgl5zju0aoxbt.lambda-url.eu-west-1.on.aws/";
+const requireEnv = (name) => {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} environment variable is required`);
+  return value;
+};
 
-const CATEGORIZE_URL =
-  process.env.CATEGORIZE_URL ||
-  "https://nihg6j62qaznkflj7j4tvb2lwa0clrbe.lambda-url.eu-west-1.on.aws/";
-
-const RULE_CREATE_URL =
-  process.env.RULE_CREATE_URL ||
-  "https://s4eufxr5d26mgjwcdx3oiktaxm0xzrfb.lambda-url.eu-west-1.on.aws/";
-
-const RULE_LOOKUP_URL =
-  process.env.RULE_LOOKUP_URL ||
-  "https://b56yhwyjcraj3tum43vucchy5a0nonut.lambda-url.eu-west-1.on.aws/";
+const OCR_URL = requireEnv("OCR_URL");
+const CATEGORIZE_URL = requireEnv("CATEGORIZE_URL");
+const RULE_CREATE_URL = process.env.RULE_CREATE_URL || "";
+const RULE_LOOKUP_URL = process.env.RULE_LOOKUP_URL || "";
 
 const normalizeItemName = (name) => (name || "").trim().toLowerCase();
 

@@ -23,9 +23,7 @@ const localCategorise = (item: string): AiResult => {
   return { category: "Miscellaneous", confidence: 0.5 };
 };
 
-const LAMBDA_URL =
-  process.env.REACT_APP_AI_LAMBDA_URL ||
-  "https://nihg6j62qaznkflj7j4tvb2lwa0clrbe.lambda-url.eu-west-1.on.aws/";
+const LAMBDA_URL = process.env.REACT_APP_AI_LAMBDA_URL || "";
 
 export const aiCategorise = async (item: string, categoryRules: CategoryRule[] = []): Promise<AiResult> => {
   const normalized = normalize(item);
