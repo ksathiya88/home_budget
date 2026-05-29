@@ -14,3 +14,33 @@ Handlers:
 - `src/services/pipelineService.js` — CommonJS runtime version.
 - `src/routes/pipelineRoute.js` — CommonJS Express route for runtime.
 - `src/server.js` — Minimal Express server mounting `/api/pipeline`. Start with `node src/server.js` (after `npm install express`). Set `OCR_URL` and `CATEGORIZE_URL` env vars as needed.
+
+## Project Structure
+```
+backend/
+  src/handlers/
+    aiCategorize.ts      # Bedrock categorize Lambda
+    ocrAgent.js          # Textract OCR Lambda (CJS)
+    ocrAgent.ts          # Textract OCR Lambda (TS source)
+    extractData.js       # OCR text parser
+    ruleCreate.js        # Rule creation Lambda (Firestore upsert)
+    ruleLookup.js        # Rule lookup Lambda (Firestore read)
+  src/services/
+    pipelineService.js   # Orchestrator (used by Express)
+    pipelineService.ts   # TS version (frontend client mirror)
+  src/routes/
+    pipelineRoute.js     # POST /api/pipeline (Express)
+    pipelineRoute.ts     # TS source
+  src/server.js          # Local Express runner (mounts /api/pipeline)
+  README.md              # Backend-specific notes
+
+frontend/
+  src/pages/OcrPipeline/ # Upload & test page
+  src/services/
+    pipelineService.ts   # Frontend client for /api/pipeline
+    expenseService.ts    # Save vs review logic
+  src/firebase.ts        # Frontend Firebase config
+  src/components/Sidebar.tsx
+  src/App.tsx
+  README.md              # Frontend-specific notes
+```

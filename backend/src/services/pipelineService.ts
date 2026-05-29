@@ -26,6 +26,14 @@ export type PipelineResult = {
 
 const normalizeItemName = (name?: string) => (name || "").trim().toLowerCase();
 
+const normalizeExtractedItems = (items: unknown) =>
+  (Array.isArray(items) ? items : [])
+    .map((item: any) => ({
+      name: String(item?.name || "").trim(),
+      price: Number(item?.price)
+    }))
+    .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
+
 async function findMatchingRule(itemName: string, householdId: string) {
   if (!RULE_LOOKUP_URL) return null;
   const keyword = normalizeItemName(itemName);
@@ -114,10 +122,15 @@ export const runPipeline = async (
     const body = await ocrRes.text();
     throw new Error(`OCR lambda error ${ocrRes.status}: ${body}`);
   }
-  const ocrJson = (await ocrRes.json()) as { text?: string };
+  const ocrJson = (await ocrRes.json()) as {
+    text?: string;
+    items?: { name?: string; price?: number }[];
+  };
   const text = ocrJson.text || "";
 
-  const extracted = extractData(text);
+  const structuredItems = normalizeExtractedItems(ocrJson.items);
+  const extracted = structuredItems.length ? { items: structuredItems } : extractData(text);
+  console.info("[pipeline] extraction source", structuredItems.length ? "AnalyzeExpense" : "text fallback");
   const items: PipelineItem[] = [];
 
   for (const item of extracted.items) {

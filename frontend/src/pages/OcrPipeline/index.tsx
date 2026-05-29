@@ -4,13 +4,41 @@ import { runPipeline, PipelineResult } from "../../services/pipelineService";
 import { getCategoryRules, CategoryRule, addToReviewQueue, addExpense } from "../../services/firestore";
 import { useHouseholdId } from "../../hooks/useHouseholdId";
 
-const fileToBase64 = (file: File) =>
+const MAX_IMAGE_DIMENSION = 1200;
+const JPEG_QUALITY = 0.7;
+
+const loadImage = (src: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+
+const fileToDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",").pop() || "");
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+
+const fileToCompressedPreview = async (file: File) => {
+  const originalDataUrl = await fileToDataUrl(file);
+  const img = await loadImage(originalDataUrl);
+  const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.width, img.height));
+  const width = Math.max(1, Math.round(img.width * scale));
+  const height = Math.max(1, Math.round(img.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return originalDataUrl;
+
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+};
 
 const OcrPipeline: React.FC = () => {
   const [fileName, setFileName] = useState("");
@@ -30,8 +58,12 @@ const OcrPipeline: React.FC = () => {
     setFileName(file.name);
     setResult(null);
     setError(null);
-    const base64 = await fileToBase64(file);
-    setPreview(base64 ? `data:${file.type || "image/*"};base64,${base64}` : null);
+    try {
+      setPreview(await fileToCompressedPreview(file));
+    } catch (err) {
+      console.warn("[OcrPipeline] image compression failed", err);
+      setError("Could not read the selected image.");
+    }
   };
 
   const run = async () => {

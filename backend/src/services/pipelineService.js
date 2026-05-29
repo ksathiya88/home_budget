@@ -13,6 +13,14 @@ const RULE_LOOKUP_URL = process.env.RULE_LOOKUP_URL || "";
 
 const normalizeItemName = (name) => (name || "").trim().toLowerCase();
 
+const normalizeExtractedItems = (items) =>
+  (Array.isArray(items) ? items : [])
+    .map((item) => ({
+      name: String(item?.name || "").trim(),
+      price: Number(item?.price)
+    }))
+    .filter((item) => item.name && Number.isFinite(item.price) && item.price > 0);
+
 async function findMatchingRule(itemName, householdId) {
   if (!RULE_LOOKUP_URL) return null;
   const keyword = normalizeItemName(itemName);
@@ -102,8 +110,9 @@ async function runPipeline(imageBase64, householdId = "") {
   const ocrJson = (await ocrRes.json()) || {};
   const text = ocrJson.text || "";
 
-  // Extract items
-  const extracted = extractData(text);
+  const structuredItems = normalizeExtractedItems(ocrJson.items);
+  const extracted = structuredItems.length ? { items: structuredItems } : extractData(text);
+  console.info("[pipeline] extraction source", structuredItems.length ? "AnalyzeExpense" : "text fallback");
 
   // Rule-first then categorize items via Lambda
   const items = [];
